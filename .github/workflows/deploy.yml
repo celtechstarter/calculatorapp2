@@ -1,1 +1,52 @@
+name: Deploy to EC2
 
+on:
+  push:
+    branches:
+      - main  
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout des Repository-Codes
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Installiere Node.js (Node 20 oder eine andere Version)
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'  # Hier wird explizit Node.js 20 angegeben
+
+      - name: Install dependencies and build project
+        run: |
+          npm install
+          npm run build
+
+      # 3. Kopiere die gebauten Dateien auf die EC2-Instanz
+      - name: Copy build files to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2IP }}  
+          username: ${{ secrets.USER }} 
+          key: ${{ secrets.SSHKEY }}  
+          source: "./build/*"  
+          target: "/home/${{ secrets.USER }}/build"  
+          debug: true
+
+      # 4. Führe die Befehle auf der EC2-Instanz aus, um den Server zu starten
+      - name: Start application on EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2IP }}
+          username: ${{ secrets.USER }}  
+          key: ${{ secrets.SSHKEY }}  
+          script: |
+            sudo yum update -y
+            sudo yum upgrade -y
+            curl -sL https://rpm.nodesource.com/setup_20.x | sudo bash -
+            sudo yum install -y nodejs
+            sudo npm install -g serve 
+            nohup sudo serve -l 80 -s /home/${{ secrets.USER }}/build > /dev/null 2>&1 &
