@@ -31,23 +31,23 @@ jobs:
           chmod 600 ~/.ssh/meinPrivateKey
           ssh-keyscan -H ${{secrets.EC2IP}} >> ~/.ssh/known_hosts
 
-      - name: SSH Connection to EC2
+      - name: SSH Connection to EC2 and Deploy
         run: |
-          ssh -i ~/.ssh/meinPrivateKey ec2-user@${{ secrets.EC2IP }} << 'ENDSSH'    
+          ssh -i ~/.ssh/meinPrivateKey ec2-user@${{ secrets.EC2IP }} << 'ENDSSH'
               sudo yum update -y
-              sudo yum upgrade -y
               sudo yum install docker -y
               sudo systemctl enable docker.service
               sudo systemctl start docker
               sudo usermod -aG docker ec2-user
               sudo docker pull "${{ secrets.HUBACC }}"/calculatorapp:latest
+              # Stop and remove the existing container if it exists
+              if [ $(sudo docker ps -q -f name=calculatorapp) ]; then
+                sudo docker stop calculatorapp
+                sudo docker rm calculatorapp
+              fi
+              # Run the new container
+              sudo docker run -d -p 80:3000 --name calculatorapp "${{ secrets.HUBACC }}"/calculatorapp:latest
           ENDSSH
-
-      - name: Start Docker Container on EC2 instance
-        run: |
-            ssh -i ~/.ssh/meinPrivateKey ec2-user@${{ secrets.EC2IP }} << 'ENDSSH'
-                docker run -d -p 80:3000 --name calculatorapp "${{ secrets.HUBACC }}"/calculatorapp:latest
-            ENDSSH
 
       - name: Clean Up SSH Key File (optional)
         run: |
