@@ -16,7 +16,7 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build -t "${{ secrets.HUBACC }}"/calculatorapp:latest .
-      
+
       - name: Docker Login
         run: echo "${{ secrets.HUBPW }}" | docker login -u "${{ secrets.HUBACC }}" --password-stdin
 
@@ -45,7 +45,7 @@ jobs:
                 sudo docker stop calculatorapp
                 sudo docker rm calculatorapp
               fi
-              # Run the new container
+              # Run the new container, mapping port 80 on EC2 to port 3000 in the container
               sudo docker run -d -p 80:3000 --name calculatorapp "${{ secrets.HUBACC }}"/calculatorapp:latest
           ENDSSH
 
