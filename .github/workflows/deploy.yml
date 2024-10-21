@@ -43,7 +43,6 @@ jobs:
               sudo docker pull "${{ secrets.HUBACC }}"/calculatorapp:latest
           ENDSSH
 
-
       - name: Start Docker Container on EC2 instance
         run: |
             ssh -i ~/.ssh/meinPrivateKey ec2-user@${{ secrets.EC2IP }} << 'ENDSSH'
@@ -52,4 +51,4 @@ jobs:
 
       - name: Clean Up SSH Key File (optional)
         run: |
-          rm meinPrivateKey
+          if [ -f ~/.ssh/meinPrivateKey ]; then rm ~/.ssh/meinPrivateKey; fi
